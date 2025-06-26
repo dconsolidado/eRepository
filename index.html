@@ -9,18 +9,38 @@
 <body>
     <div class="app-container">
         <aside class="sidebar">
-            <h2>Elements</h2>
-            <ul id="elements-list">
-                <!-- UI elements will be populated here by JavaScript -->
-            </ul>
+            <div class="pages-panel">
+                <h3>Pages</h3>
+                <ul id="pages-list">
+                    <!-- Page list will be populated by JS -->
+                </ul>
+                <button id="add-page-button">+ Add Page</button>
+            </div>
+            <div class="elements-section">
+                <h2>Elements</h2>
+                <ul id="elements-list">
+                    <!-- UI elements will be populated here by JavaScript -->
+                </ul>
+            </div>
             <div class="actions">
                 <button id="save-button">Save</button>
                 <button id="load-button">Load</button>
+                <button id="export-png-button">Export as PNG</button>
+            </div>
+            <div class="tools">
+                <button id="connector-tool-button">Draw Connector</button>
             </div>
         </aside>
         <main class="canvas-area">
             <canvas id="wireframe-canvas"></canvas>
         </main>
+        <aside class="properties-panel">
+            <h2>Properties</h2>
+            <div id="properties-content">
+                <!-- Property editors will go here -->
+                <p>Select an element to see its properties.</p>
+            </div>
+        </aside>
     </div>
     <script src="script.js"></script>
 </body>

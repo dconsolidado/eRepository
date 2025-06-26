@@ -17,9 +17,72 @@ body, html {
     padding: 15px;
     border-right: 1px solid #ccc;
     overflow-y: auto; /* Allow scrolling if many elements */
+    display: flex;
+    flex-direction: column;
 }
 
-.sidebar h2 {
+.pages-panel {
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.pages-panel h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 1.1em;
+    color: #333;
+}
+
+#pages-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0 0 10px 0;
+    max-height: 150px; /* Example max height, can be adjusted */
+    overflow-y: auto;
+}
+
+#pages-list li {
+    padding: 8px 10px;
+    margin-bottom: 3px;
+    background-color: #e9e9e9;
+    border: 1px solid #d0d0d0;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+#pages-list li:hover {
+    background-color: #d5d5d5;
+}
+
+#pages-list li.active-page {
+    background-color: #007bff;
+    color: white;
+    border-color: #0056b3;
+    font-weight: bold;
+}
+
+#add-page-button {
+    display: block;
+    width: 100%;
+    padding: 8px;
+    background-color: #28a745; /* Green for add */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+#add-page-button:hover {
+    background-color: #218838;
+}
+
+
+.sidebar .elements-section h2, /* Target h2 specifically in elements section if needed */
+.sidebar h2 { /* Existing rule for Elements, keep or merge */
     margin-top: 0;
     font-size: 1.2em;
     text-align: center;
@@ -73,4 +136,88 @@ body, html {
 
 .sidebar .actions button:hover {
     background-color: #0056b3;
+}
+
+.sidebar .tools {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
+}
+
+.sidebar .tools h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1em;
+    color: #333;
+}
+
+.sidebar .tools button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #6c757d; /* A different color for tools */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.sidebar .tools button:hover {
+    background-color: #5a6268;
+}
+
+.sidebar .tools button.active {
+    background-color: #5a6268; /* Darker when active */
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+}
+
+.properties-panel {
+    width: 250px;
+    background-color: #f8f8f8;
+    padding: 15px;
+    border-left: 1px solid #ccc;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.properties-panel h2 {
+    margin-top: 0;
+    font-size: 1.2em;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+#properties-content p {
+    color: #666;
+    text-align: center;
+    font-style: italic;
+}
+
+/* Styles for form elements within properties panel - can be expanded */
+#properties-content label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+#properties-content input[type="color"],
+#properties-content input[type="number"],
+#properties-content input[type="text"],
+#properties-content select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+#properties-content input[type="color"] {
+    height: 40px; /* Make color input a bit taller */
 }
