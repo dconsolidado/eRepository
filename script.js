@@ -385,7 +385,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 const targetPageId = event.target.value;
                 if (targetPageId) selectedElement.linkToPageId = targetPageId;
                 else delete selectedElement.linkToPageId;
+                // Future: could add visual indicator on element itself via redrawCanvas()
             });
+        }
+
+        // "Convert to Paragraph" button for 'text' elements
+        if (selectedElement.type === 'text') {
+            const convertButton = document.createElement('button');
+            convertButton.id = 'convert-to-paragraph-button';
+            convertButton.textContent = 'Convert to Paragraph';
+            convertButton.style.marginTop = '15px'; // Add some spacing
+            convertButton.addEventListener('click', () => {
+                if (selectedElement && selectedElement.type === 'text') {
+                    selectedElement.type = 'paragraph';
+                    // Adjust height if it's currently very small (typical for a single line label)
+                    if (!selectedElement.height || selectedElement.height <= 25) {
+                        selectedElement.height = 60; // Default height for a new paragraph
+                    }
+                    // Ensure it has default paragraph font settings if it didn't before
+                    if (!selectedElement.fontSize) {
+                        selectedElement.fontSize = 14; // Default paragraph font size
+                        selectedElement.font = `${selectedElement.fontSize}px sans-serif`;
+                    } else { // Ensure font string is updated if only fontSize was set
+                        selectedElement.font = `${selectedElement.fontSize}px sans-serif`;
+                    }
+
+
+                    console.log(`Element converted to paragraph:`, selectedElement);
+                    redrawCanvas();
+                    updatePropertiesPanel(); // Refresh panel to remove button & show paragraph props
+                }
+            });
+            propsContent.appendChild(convertButton);
         }
     }
     const pagesListUI = document.getElementById('pages-list');
