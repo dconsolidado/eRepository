@@ -1,47 +1,955 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wireframing Tool</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Wireframe Designer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .toolbar {
+            width: 200px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .toolbar h3 {
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #bdc3c7;
+        }
+
+        .element-group {
+            margin-bottom: 20px;
+        }
+
+        .element-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #34495e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+
+        .element-btn:hover {
+            background: #3498db;
+        }
+
+        .tool-btn {
+            background: #1abc9c;
+        }
+        .tool-btn:hover {
+            background: #16a085;
+        }
+        .tool-btn.active {
+            background: #16a085;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background: white;
+            overflow: hidden;
+        }
+
+        .canvas {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background:
+                radial-gradient(circle, #ddd 1px, transparent 1px);
+            background-size: 20px 20px;
+            cursor: default;
+        }
+        .canvas.connecting-mode {
+            cursor: crosshair;
+        }
+        .canvas.connecting-mode .wireframe-element:hover {
+             cursor: pointer;
+             border-color: #1abc9c !important;
+        }
+
+
+        .wireframe-element {
+            position: absolute;
+            border: 2px solid #3498db;
+            background: rgba(52, 152, 219, 0.1);
+            cursor: move;
+            user-select: none;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #2c3e50;
+            font-weight: bold;
+            overflow: hidden;
+        }
+
+        .wireframe-element:hover {
+            border-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .wireframe-element.selected {
+            border-color: #e74c3c !important;
+            background: rgba(231, 76, 60, 0.2);
+            z-index: 10;
+        }
+        .wireframe-element.connection-start {
+            box-shadow: 0 0 10px #1abc9c;
+            border-color: #1abc9c !important;
+        }
+
+
+        .button-element {
+            border-radius: 6px;
+            background: #ecf0f1;
+            border: 2px solid #95a5a6;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .text-element {
+            border: 2px dashed #95a5a6;
+            background: transparent;
+            text-align: left;
+            padding: 5px;
+            line-height: 1.2;
+            align-items: flex-start;
+        }
+
+        .paragraph-element {
+            border: 2px dashed #7f8c8d;
+            background: transparent;
+            text-align: left;
+            padding: 5px;
+            line-height: 1.2;
+            align-items: flex-start;
+            white-space: pre-wrap;
+        }
+
+
+        .input-element {
+            border: 2px solid #bdc3c7;
+            background: white;
+            border-radius: 2px;
+            padding: 0;
+            text-align: left;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .input-field {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            padding: 5px;
+            font-family: inherit;
+            font-size: inherit;
+            background: transparent;
+            resize: none;
+        }
+
+        .image-element {
+            border: 2px solid #95a5a6;
+            background: #ecf0f1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #7f8c8d;
+            text-align: center;
+        }
+        .image-element .caption {
+            font-size: 0.7em;
+            font-weight: normal;
+            margin-top: 5px;
+            color: #2c3e50;
+        }
+
+
+        .arrow-element {
+            border: none;
+            background: transparent;
+            overflow: visible;
+        }
+        .arrow-element .arrow-svg-static line {
+             stroke-width: 2;
+             stroke: #2c3e50;
+        }
+        .arrow-element .arrow-svg-static polygon {
+            fill: #2c3e50;
+        }
+
+        .connector-arrow-svg {
+            position: absolute;
+            overflow: visible;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .connector-arrow-svg line {
+            stroke: #2c3e50;
+            stroke-width: 2;
+        }
+         .connector-arrow-svg polygon {
+            fill: #2c3e50;
+        }
+
+
+        .delete-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 20px;
+            height: 20px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 20px;
+            text-align: center;
+            display: none;
+            z-index: 15;
+        }
+
+        .wireframe-element.selected .delete-btn {
+            display: block;
+        }
+
+        .resize-handle {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            width: 10px;
+            height: 10px;
+            background: #3498db;
+            cursor: se-resize;
+            display: none;
+            z-index: 15;
+        }
+
+        .wireframe-element.selected .resize-handle {
+            display: block;
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column; /* Stack buttons vertically */
+            gap: 10px;
+            z-index: 20;
+        }
+         .controls .file-input-group {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .controls input[type="file"] {
+            display: none; /* Hide default file input */
+        }
+        .controls .file-label-btn { /* Style custom file input button */
+            padding: 8px 12px;
+            background: #e67e22; /* Orange for import */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .controls .file-label-btn:hover {
+            background: #d35400;
+        }
+
+
+        .control-btn {
+            padding: 8px 12px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .control-btn:hover {
+            background: #2980b9;
+        }
+
+        .properties-sidebar {
+            width: 220px;
+            background: #ecf0f1;
+            padding: 15px;
+            border-left: 1px solid #bdc3c7;
+            overflow-y: auto;
+            color: #2c3e50;
+        }
+        .properties-sidebar h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #7f8c8d;
+            border-bottom: 1px solid #bdc3c7;
+            padding-bottom: 10px;
+        }
+        .prop-group {
+            margin-bottom:15px;
+        }
+        .prop-group label {
+            display: block;
+            font-size: 11px;
+            margin-bottom: 3px;
+            font-weight: bold;
+        }
+        .prop-group input[type="number"],
+        .prop-group input[type="text"],
+        .prop-group select,
+        .prop-group button {
+            width: 100%;
+            padding: 6px;
+            border-radius: 3px;
+            border: 1px solid #bdc3c7;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        .prop-group button {
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+        }
+         .prop-group button:hover {
+            background-color: #2980b9;
+        }
+        .alignment-buttons button {
+            width: auto;
+            padding: 5px 8px;
+            margin-right: 5px;
+        }
+        .page-action-button {
+             font-size: 0.8em !important;
+             padding: 2px 5px !important;
+             margin-left: 5px !important;
+             background-color: #7f8c8d !important;
+        }
+        .page-action-button:hover {
+            background-color: #95a5a6 !important;
+        }
+        .page-delete-button {
+            background-color: #c0392b !important;
+        }
+        .page-delete-button:hover {
+            background-color: #e74c3c !important;
+        }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <aside class="sidebar">
-            <div class="pages-panel">
-                <h3>Pages</h3>
-                <ul id="pages-list">
-                    <!-- Page list will be populated by JS -->
-                </ul>
-                <button id="add-page-button">+ Add Page</button>
+    <div class="container">
+        <div class="toolbar">
+            <h3>Páginas</h3>
+            <ul id="pages-list" style="list-style-type: none; padding: 0; margin-bottom:10px; max-height: 100px; overflow-y:auto;">
+            </ul>
+            <button id="add-page-button" class="element-btn" style="background-color: #27ae60; margin-bottom:20px;">+ Nueva Página</button>
+
+            <h3>Elementos UI</h3>
+            <div class="element-group">
+                <button class="element-btn" data-type="button">📱 Botón</button>
+                <button class="element-btn" data-type="input">📝 Campo de texto</button>
+                <button class="element-btn" data-type="text">📄 Texto</button>
+                <button class="element-btn" data-type="image">🖼️ Imagen</button>
             </div>
-            <div class="elements-section">
-                <h2>Elements</h2>
-                <ul id="elements-list">
-                    <!-- UI elements will be populated here by JavaScript -->
-                </ul>
+
+            <h3>Formas</h3>
+            <div class="element-group">
+                <button class="element-btn" data-type="rectangle">⬜ Rectángulo</button>
+                <button class="element-btn" data-type="circle">⭕ Círculo</button>
+                <button class="element-btn" data-type="arrow">➡️ Flecha (Estática)</button>
             </div>
-            <div class="actions">
-                <button id="save-button">Save</button>
-                <button id="load-button">Load</button>
-                <button id="export-png-button">Export as PNG</button>
+
+            <h3>Navegación</h3>
+            <div class="element-group">
+                <button class="element-btn" data-type="menu">☰ Menú</button>
+                <button class="element-btn" data-type="tab">📋 Pestañas</button>
+                <button class="element-btn" data-type="breadcrumb">🔗 Breadcrumb</button>
             </div>
-            <div class="tools">
-                <button id="connector-tool-button">Draw Connector</button>
+
+            <h3>Herramientas</h3>
+            <div class="element-group">
+                <button class="element-btn tool-btn" id="connect-tool">🔗 Conectar Elementos</button>
             </div>
-        </aside>
-        <main class="canvas-area">
-            <canvas id="wireframe-canvas"></canvas>
-        </main>
-        <aside class="properties-panel">
-            <h2>Properties</h2>
-            <div id="properties-content">
-                <!-- Property editors will go here -->
-                <p>Select an element to see its properties.</p>
+        </div>
+
+        <div class="canvas-container">
+            <div class="controls">
+                <button class="control-btn" onclick="clearCanvas()">🗑️ Limpiar</button>
+                <button class="control-btn" onclick="exportWireframe()">💾 Exportar</button>
+                <div class="file-input-group">
+                    <label for="import-file-input" class="control-btn file-label-btn">📥 Importar</label>
+                    <input type="file" id="import-file-input" accept=".json">
+                </div>
             </div>
-        </aside>
+            <div class="canvas" id="canvas">
+            </div>
+        </div>
+
+        <div class="properties-sidebar" id="properties-panel">
+            <h3>Propiedades</h3>
+            <div id="props-content-area">
+                <p>Selecciona un elemento.</p>
+            </div>
+        </div>
     </div>
-    <script src="script.js"></script>
+
+    <script>
+        let selectedElement = null;
+        let isDragging = false;
+        let isResizing = false;
+        let dragOffset = { x: 0, y: 0 };
+        let elementCounter = 0;
+
+        let isConnectingMode = false;
+        let startConnectionElement = null;
+        const connections = [];
+
+
+        const elementConfigs = {
+            button: { width: 100, height: 35, text: 'Botón' },
+            input: { width: 150, height: 30, text: '', placeholder: 'Escribe aquí...' },
+            text: { width: 120, height: 25, text: 'Texto aquí' },
+            image: { width: 120, height: 80, text: '🖼️', caption: '' },
+            rectangle: { width: 100, height: 60, text: '' },
+            circle: { width: 80, height: 80, text: '' },
+            arrow: { width: 100, height: 20, text: '' },
+            menu: { width: 150, height: 100, text: '☰ Menú\n• Opción 1\n• Opción 2' },
+            tab: { width: 200, height: 30, text: 'Tab 1 | Tab 2 | Tab 3' },
+            breadcrumb: { width: 200, height: 25, text: 'Inicio > Página' }
+        };
+
+        const propsContentArea = document.getElementById('props-content-area');
+        const canvasElement = document.getElementById('canvas');
+        const connectToolButton = document.getElementById('connect-tool');
+        const importFileInput = document.getElementById('import-file-input');
+        // const addPageButton = document.getElementById('add-page-button'); // Page management still placeholder
+        // const pagesListUI = document.getElementById('pages-list');
+
+
+        document.querySelectorAll('.element-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const type = e.target.dataset.type;
+                if (e.target.id !== 'connect-tool' && e.target.id !== 'add-page-button') {
+                    createWireframeElement(type);
+                }
+            });
+        });
+
+        connectToolButton.addEventListener('click', (e) => {
+            isConnectingMode = !isConnectingMode;
+            e.target.classList.toggle('active', isConnectingMode);
+            canvasElement.classList.toggle('connecting-mode', isConnectingMode);
+            if (!isConnectingMode && startConnectionElement) {
+                startConnectionElement.classList.remove('connection-start');
+                startConnectionElement = null;
+            } else if (isConnectingMode) {
+                deselectAll();
+                updatePropertiesPanel();
+            }
+        });
+
+        canvasElement.addEventListener('click', (e) => {
+            const targetElement = e.target.closest('.wireframe-element');
+            if (isConnectingMode) {
+                if (targetElement) {
+                    if (!startConnectionElement) {
+                        startConnectionElement = targetElement;
+                        targetElement.classList.add('connection-start');
+                        e.stopPropagation();
+                    } else if (startConnectionElement !== targetElement) {
+                        createConnection(startConnectionElement, targetElement);
+                        startConnectionElement.classList.remove('connection-start');
+                        startConnectionElement = null;
+                    } else {
+                         if(startConnectionElement) startConnectionElement.classList.remove('connection-start');
+                         startConnectionElement = null;
+                    }
+                } else {
+                    if (startConnectionElement) {
+                        startConnectionElement.classList.remove('connection-start');
+                        startConnectionElement = null;
+                    }
+                }
+            } else {
+                if (e.target === e.currentTarget) {
+                    deselectAll();
+                    updatePropertiesPanel();
+                }
+            }
+        });
+
+        function createWireframeElement(type, loadedConfig = null) {
+            elementCounter++;
+            const config = loadedConfig || elementConfigs[type];
+            const element = document.createElement('div');
+            element.className = `wireframe-element ${type}-element`;
+
+            // Use loaded ID or generate new one
+            element.id = loadedConfig ? config.id :`element-${elementCounter}`;
+            if (!loadedConfig) { // Ensure counter is always ahead of loaded IDs
+                 const idNum = parseInt(element.id.split('-')[1]);
+                 if (idNum >= elementCounter) elementCounter = idNum + 1;
+            }
+
+
+            const x = loadedConfig ? config.x : (Math.random() * (canvasElement.offsetWidth - (config.width || 100) - 100) + 50);
+            const y = loadedConfig ? config.y : (Math.random() * (canvasElement.offsetHeight - (config.height || 50) - 100) + 50);
+
+            element.style.left = x + 'px';
+            element.style.top = y + 'px';
+            element.style.width = (config.width || elementConfigs[type].width) + 'px';
+            element.style.height = (config.height || elementConfigs[type].height) + 'px';
+            element.dataset.type = type;
+
+            element.style.textAlign = config.textAlign || (type === 'button' ? 'center' : 'left');
+            element.style.fontFamily = config.fontFamily || 'Arial, sans-serif';
+            element.style.fontSize = config.fontSize || (elementConfigs[type].fontSize || 12) + 'px';
+            if (type === 'arrow' && config.rotation) {
+                 element.style.transform = `rotate(${config.rotation}deg)`;
+            }
+
+
+            if (type === 'arrow') {
+                element.innerHTML = `
+                    <svg class="arrow-svg-static" viewBox="0 0 100 20" preserveAspectRatio="none">
+                        <defs>
+                            <marker id="arrowhead-static-${element.id}" markerWidth="10" markerHeight="7"
+                                refX="10" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" />
+                            </marker>
+                        </defs>
+                        <line x1="10" y1="10" x2="90" y2="10" marker-end="url(#arrowhead-static-${element.id})" />
+                    </svg>
+                `;
+            } else if (type === 'input') {
+                const inputField = document.createElement('input');
+                inputField.className = 'input-field';
+                inputField.type = 'text';
+                inputField.placeholder = config.placeholder || elementConfigs[type].placeholder;
+                inputField.value = config.text || '';
+                inputField.addEventListener('mousedown', (e) => e.stopPropagation());
+                inputField.addEventListener('click', (e) => e.stopPropagation());
+                element.appendChild(inputField);
+            } else if (type === 'circle') {
+                element.style.borderRadius = '50%';
+                element.textContent = config.text || elementConfigs[type].text;
+            } else if (type === 'image') {
+                element.dataset.caption = config.caption || config.text || ''; // Use text as fallback for caption if loading old format
+                const iconSpan = document.createElement('span');
+                iconSpan.textContent = elementConfigs.image.text;
+                element.appendChild(iconSpan);
+                if (element.dataset.caption) {
+                    const captionSpan = document.createElement('span');
+                    captionSpan.className = 'caption';
+                    captionSpan.textContent = element.dataset.caption;
+                    element.appendChild(captionSpan);
+                }
+            }
+             else {
+                element.textContent = config.text || elementConfigs[type].text;
+                if (type === 'menu' || type === 'breadcrumb' || type === 'paragraph' || (type === 'text' && element.textContent.includes('\n'))) {
+                    element.style.whiteSpace = 'pre-line';
+                }
+                 if (type === 'menu') {
+                    element.style.fontSize = '11px';
+                    element.style.padding = '8px';
+                }
+            }
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.innerHTML = '×';
+            deleteBtn.onclick = (e) => { e.stopPropagation();
+                const elToRemove = element; // Closure for the element
+                const idToRemove = elToRemove.id;
+                elToRemove.remove();
+                if(selectedElement === elToRemove) {
+                    deselectAll();
+                    updatePropertiesPanel();
+                }
+                // Remove connections associated with this element
+                connections.slice().reverse().forEach((conn, index) => {
+                    if (conn.fromId === idToRemove || conn.toId === idToRemove) {
+                        if (conn.arrowSvgElement) conn.arrowSvgElement.remove();
+                        connections.splice(connections.length - 1 - index, 1);
+                    }
+                });
+            };
+
+            const resizeHandle = document.createElement('div');
+            resizeHandle.className = 'resize-handle';
+
+            element.appendChild(deleteBtn);
+            element.appendChild(resizeHandle);
+
+            element.addEventListener('mousedown', startDrag);
+            element.addEventListener('dblclick', editText);
+            resizeHandle.addEventListener('mousedown', startResize);
+
+            canvasElement.appendChild(element);
+            if (!loadedConfig) {
+                selectElement({ target: element, stopPropagation: () => {} }, false);
+                updatePropertiesPanel();
+            }
+             // Update elementCounter if loaded ID is higher
+            const idNum = parseInt(element.id.split('-')[1]);
+            if (idNum >= elementCounter) {
+                elementCounter = idNum + 1;
+            }
+        }
+
+        function createConnection(el1, el2) {
+            const svgNS = "http://www.w3.org/2000/svg";
+            const arrowSvg = document.createElementNS(svgNS, "svg");
+            const arrowId = `connector-arrow-${connections.length + 1}`;
+            arrowSvg.setAttribute("id", arrowId);
+            arrowSvg.classList.add("connector-arrow-svg");
+
+            const line = document.createElementNS(svgNS, "line");
+            const defs = document.createElementNS(svgNS, "defs");
+            const marker = document.createElementNS(svgNS, "marker");
+            const markerId = `arrowhead-conn-${connections.length + 1}`;
+            marker.setAttribute("id", markerId);
+            marker.setAttribute("markerWidth", "10"); marker.setAttribute("markerHeight", "7");
+            marker.setAttribute("refX", "8"); marker.setAttribute("refY", "3.5");
+            marker.setAttribute("orient", "auto"); marker.setAttribute("markerUnits", "strokeWidth");
+            const polygon = document.createElementNS(svgNS, "polygon");
+            polygon.setAttribute("points", "0 0, 10 3.5, 0 7");
+
+            marker.appendChild(polygon); defs.appendChild(marker);
+            arrowSvg.appendChild(defs);
+            line.setAttribute("marker-end", `url(#${markerId})`);
+            arrowSvg.appendChild(line);
+            canvasElement.appendChild(arrowSvg);
+
+            const connection = {
+                fromId: el1.id, toId: el2.id, arrowSvgElement: arrowSvg, lineElement: line
+            };
+            connections.push(connection);
+            updateConnectionArrow(connection);
+        }
+
+        function updateConnectionArrow(connection) {
+            const fromEl = document.getElementById(connection.fromId);
+            const toEl = document.getElementById(connection.toId);
+            if (!fromEl || !toEl) {
+                if (connection.arrowSvgElement) connection.arrowSvgElement.remove();
+                const connIndex = connections.indexOf(connection);
+                if (connIndex > -1) connections.splice(connIndex, 1);
+                return;
+            }
+            const canvasRect = canvasElement.getBoundingClientRect();
+            const fromRect = fromEl.getBoundingClientRect();
+            const toRect = toEl.getBoundingClientRect();
+            const fromCenterX = (fromRect.left - canvasRect.left) + fromRect.width / 2;
+            const fromCenterY = (fromRect.top - canvasRect.top) + fromRect.height / 2;
+            const toCenterX = (toRect.left - canvasRect.left) + toRect.width / 2;
+            const toCenterY = (toRect.top - canvasRect.top) + toRect.height / 2;
+            const line = connection.lineElement;
+            line.setAttribute("x1", fromCenterX); line.setAttribute("y1", fromCenterY);
+            line.setAttribute("x2", toCenterX); line.setAttribute("y2", toCenterY);
+            connection.arrowSvgElement.style.left = '0px'; connection.arrowSvgElement.style.top = '0px';
+            connection.arrowSvgElement.style.width = '100%'; connection.arrowSvgElement.style.height = '100%';
+        }
+
+        function updateAllConnections() {
+            connections.forEach(conn => updateConnectionArrow(conn));
+        }
+
+        function startDrag(e) {
+            if (e.target.classList.contains('resize-handle') || e.target.classList.contains('delete-btn') || e.target.tagName === 'INPUT' || isConnectingMode) return;
+            isDragging = true;
+            const targetElement = e.currentTarget;
+            if (selectedElement !== targetElement) {
+                selectElement({ target: targetElement, stopPropagation: () => {} });
+            }
+            const rect = selectedElement.getBoundingClientRect();
+            const canvasRect = canvasElement.getBoundingClientRect();
+            dragOffset.x = e.clientX - (rect.left - canvasRect.left);
+            dragOffset.y = e.clientY - (rect.top - canvasRect.top);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+            e.preventDefault();
+        }
+
+        function drag(e) {
+            if (!isDragging || !selectedElement) return;
+            const canvasRect = canvasElement.getBoundingClientRect();
+            const x = e.clientX - dragOffset.x;
+            const y = e.clientY - dragOffset.y;
+            selectedElement.style.left = Math.max(0, Math.min(x, canvasRect.width - selectedElement.offsetWidth)) + 'px';
+            selectedElement.style.top = Math.max(0, Math.min(y, canvasRect.height - selectedElement.offsetHeight)) + 'px';
+            updateAllConnections();
+            updatePropertiesPanel();
+        }
+
+        function stopDrag() {
+            isDragging = false;
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
+
+        function startResize(e) {
+            e.stopPropagation(); isResizing = true;
+            selectedElement = e.target.parentElement;
+            document.addEventListener('mousemove', resize);
+            document.addEventListener('mouseup', stopResize);
+        }
+
+        function resize(e) {
+            if (!isResizing || !selectedElement) return;
+            const elementRect = selectedElement.getBoundingClientRect();
+            const canvasRect = canvasElement.getBoundingClientRect();
+            let newWidth = e.clientX - elementRect.left;
+            let newHeight = e.clientY - elementRect.top;
+            newWidth = Math.min(newWidth, canvasRect.width - parseFloat(selectedElement.style.left));
+            newHeight = Math.min(newHeight, canvasRect.height - parseFloat(selectedElement.style.top));
+            selectedElement.style.width = Math.max(20, newWidth) + 'px';
+            selectedElement.style.height = Math.max(20, newHeight) + 'px';
+            updateAllConnections();
+            updatePropertiesPanel();
+        }
+
+        function stopResize() {
+            isResizing = false;
+            document.removeEventListener('mousemove', resize);
+            document.removeEventListener('mouseup', stopResize);
+        }
+
+        function selectElement(e, shouldUpdatePanel = true) {
+            e.stopPropagation();
+            const targetElement = e.target.closest('.wireframe-element');
+            if (isConnectingMode) return;
+            deselectAll();
+            if (targetElement) {
+                selectedElement = targetElement;
+                selectedElement.classList.add('selected');
+            }
+            if (shouldUpdatePanel) updatePropertiesPanel();
+        }
+
+        function deselectAll() {
+            document.querySelectorAll('.wireframe-element.selected').forEach(el => el.classList.remove('selected'));
+            if (startConnectionElement) startConnectionElement.classList.remove('connection-start');
+            // startConnectionElement = null; // Reset only if not completing a connection. Click on canvas handles this.
+            selectedElement = null;
+        }
+
+        function editText(e) {
+            e.stopPropagation(); const element = e.target.closest('.wireframe-element');
+            if (!element || element.classList.contains('arrow-element')) return;
+            let currentText = ''; const type = element.dataset.type;
+            if (type === 'input') {
+                const inputField = element.querySelector('.input-field'); currentText = inputField.value;
+                const newText = prompt('Editar valor del campo de texto:', currentText);
+                if (newText !== null) inputField.value = newText;
+            } else if (type === 'image') {
+                currentText = element.dataset.caption || '';
+                const newCaption = prompt('Editar pie de foto:', currentText);
+                if (newCaption !== null) {
+                    element.dataset.caption = newCaption;
+                    element.querySelectorAll('.caption').forEach(c => c.remove());
+                    if (newCaption.trim() !== "") {
+                        const captionSpan = document.createElement('span'); captionSpan.className = 'caption';
+                        captionSpan.textContent = newCaption; element.appendChild(captionSpan);
+                    }
+                }
+            } else {
+                currentText = element.textContent.trim();
+                const newText = prompt('Editar texto:', currentText);
+                if (newText !== null) {
+                    element.textContent = newText;
+                     if (type === 'menu' || type === 'breadcrumb' || type === 'paragraph' || (type === 'text' && newText.includes('\n'))) {
+                        element.style.whiteSpace = 'pre-line';
+                    } else { element.style.whiteSpace = 'normal';}
+                }
+            }
+            updatePropertiesPanel();
+        }
+
+        function updatePropertiesPanel() {
+            propsContentArea.innerHTML = '';
+            if (!selectedElement) { propsContentArea.innerHTML = '<p>Selecciona un elemento.</p>'; return; }
+            const type = selectedElement.dataset.type;
+            let html = `<div class="prop-group"><label>Tipo:</label> <p>${type.charAt(0).toUpperCase() + type.slice(1)}</p></div>`;
+            html += `<div class="prop-group"><label>ID:</label> <p>${selectedElement.id}</p></div>`;
+            html += `<div class="prop-group"><label>X:</label> <p>${parseInt(selectedElement.style.left)}px</p></div>`;
+            html += `<div class="prop-group"><label>Y:</label> <p>${parseInt(selectedElement.style.top)}px</p></div>`;
+            html += `<div class="prop-group"><label>Ancho:</label> <p>${parseInt(selectedElement.style.width)}px</p></div>`;
+            html += `<div class="prop-group"><label>Alto:</label> <p>${parseInt(selectedElement.style.height)}px</p></div>`;
+            const textSupportingTypes = ['button', 'text', 'input', 'paragraph', 'menu', 'tab', 'breadcrumb'];
+            if (textSupportingTypes.includes(type) && type !== 'image') {
+                html += `<div class="prop-group alignment-buttons"><label>Alineación:</label>`;
+                html += `<button data-align="left">Izq</button> <button data-align="center">Cen</button> <button data-align="right">Der</button></div>`;
+                html += `<div class="prop-group"><label for="font-family-select">Fuente:</label>
+                         <select id="font-family-select">
+                             <option value="Arial, sans-serif" ${(!selectedElement.style.fontFamily || selectedElement.style.fontFamily === "Arial, sans-serif") ? "selected" : ""}>Arial</option>
+                             <option value="Comic Sans MS, cursive" ${selectedElement.style.fontFamily === "Comic Sans MS, cursive" ? "selected" : ""}>Comic Sans</option>
+                             <option value="Verdana, sans-serif" ${selectedElement.style.fontFamily === "Verdana, sans-serif" ? "selected" : ""}>Verdana</option>
+                         </select></div>`;
+                html += `<div class="prop-group"><label for="font-size-input">Tamaño (px):</label><input type="number" id="font-size-input" value="${parseInt(selectedElement.style.fontSize) || 12}" min="8"></div>`;
+            }
+            if (type === 'arrow') {
+                const currentRotationMatch = selectedElement.style.transform.match(/rotate\((\d+)deg\)/);
+                const rotationValue = currentRotationMatch ? currentRotationMatch[1] : 0;
+                html += `<div class="prop-group"><label for="rotation-input">Rotación (°):</label><input type="number" id="rotation-input" value="${rotationValue}"></div>`;
+            }
+            propsContentArea.innerHTML = html;
+            propsContentArea.querySelectorAll('.alignment-buttons button').forEach(btn => {
+                btn.addEventListener('click', () => { selectedElement.style.textAlign = btn.dataset.align; });
+            });
+            const fontFamilySelect = propsContentArea.querySelector('#font-family-select');
+            if (fontFamilySelect) fontFamilySelect.addEventListener('change', (e) => { selectedElement.style.fontFamily = e.target.value; });
+            const fontSizeInput = propsContentArea.querySelector('#font-size-input');
+            if (fontSizeInput) fontSizeInput.addEventListener('input', (e) => { selectedElement.style.fontSize = e.target.value + 'px'; });
+            const rotationInput = propsContentArea.querySelector('#rotation-input');
+            if (rotationInput) rotationInput.addEventListener('input', (e) => { selectedElement.style.transform = `rotate(${e.target.value}deg)`; });
+        }
+
+        function clearCanvas() {
+            if (confirm('¿Estás seguro de que quieres limpiar todo el canvas?')) {
+                canvasElement.innerHTML = ''; connections.length = 0;
+                document.querySelectorAll('.connector-arrow-svg').forEach(svg => svg.remove());
+                selectedElement = null; elementCounter = 0; updatePropertiesPanel();
+            }
+        }
+
+        function exportWireframe() {
+            const elementsToExport = [];
+            document.querySelectorAll('#canvas .wireframe-element').forEach(el => { // Ensure we only get elements from the main canvas
+                const inputField = el.querySelector('.input-field');
+                let textContent = el.textContent;
+                const type = el.dataset.type;
+                if (type === 'input' && inputField) textContent = inputField.value || inputField.placeholder;
+                else if (type === 'image') textContent = el.dataset.caption || '';
+                else if (type === 'arrow') textContent = '';
+                let rotation = 0;
+                if (type === 'arrow' && el.style.transform.includes('rotate')) {
+                    const match = el.style.transform.match(/rotate\((\d+)deg\)/);
+                    if (match) rotation = parseInt(match[1]);
+                }
+                elementsToExport.push({
+                    id: el.id, type: type, x: parseInt(el.style.left), y: parseInt(el.style.top),
+                    width: parseInt(el.style.width), height: parseInt(el.style.height), text: textContent,
+                    textAlign: el.style.textAlign || '', fontFamily: el.style.fontFamily || '',
+                    fontSize: el.style.fontSize || '', rotation: rotation,
+                });
+            });
+            const connectionsToExport = connections.map(conn => ({ fromId: conn.fromId, toId: conn.toId }));
+            const exportData = { wireframeTitle: "Mi Wireframe", elements: elementsToExport, connections: connectionsToExport, timestamp: new Date().toISOString() };
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob); const a = document.createElement('a');
+            a.href = url; a.download = 'wireframe.json'; a.click(); URL.revokeObjectURL(url);
+        }
+
+        importFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const jsonData = JSON.parse(e.target.result);
+                        importWireframe(jsonData);
+                    } catch (err) {
+                        console.error("Error parsing JSON file:", err);
+                        alert("Error al importar: el archivo no es un JSON válido.");
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = null; // Reset file input
+            }
+        });
+
+        function importWireframe(data) {
+            if (!data || !data.elements) {
+                alert("Formato de archivo no válido.");
+                return;
+            }
+            clearCanvas(); // Clear existing content
+            elementCounter = 0; // Reset counter, IDs from file will be used
+
+            data.elements.forEach(elData => {
+                createWireframeElement(elData.type, elData);
+                 // Ensure elementCounter is updated if loaded IDs are higher
+                const idNum = parseInt(elData.id.split('-')[1]);
+                if (idNum >= elementCounter) {
+                    elementCounter = idNum + 1;
+                }
+            });
+
+            if (data.connections && Array.isArray(data.connections)) {
+                data.connections.forEach(connData => {
+                    const fromEl = document.getElementById(connData.fromId);
+                    const toEl = document.getElementById(connData.toId);
+                    if (fromEl && toEl) {
+                        createConnection(fromEl, toEl);
+                    } else {
+                        console.warn(`Could not create connection: element(s) not found for fromId=${connData.fromId}, toId=${connData.toId}`);
+                    }
+                });
+            }
+            updateAllConnections(); // Refresh all arrow positions
+            console.log("Wireframe importado.");
+        }
+
+
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.key === 'Delete' && selectedElement) {
+                const idToRemove = selectedElement.id;
+                selectedElement.remove(); selectedElement = null; updatePropertiesPanel();
+                // Remove connections associated with this element
+                connections.slice().reverse().forEach((conn, index) => {
+                    if (conn.fromId === idToRemove || conn.toId === idToRemove) {
+                        if (conn.arrowSvgElement) conn.arrowSvgElement.remove();
+                        connections.splice(connections.length - 1 - index, 1);
+                    }
+                });
+            }
+            if (e.key === 'Escape') { deselectAll(); updatePropertiesPanel(); }
+        });
+
+        updatePropertiesPanel();
+        console.log('DOM-based Wireframing tool script loaded.');
+    </script>
 </body>
 </html>
