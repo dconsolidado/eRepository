@@ -268,7 +268,7 @@
             top: 20px;
             right: 20px;
             display: flex;
-            flex-direction: column; /* Stack buttons vertically */
+            flex-direction: column;
             gap: 10px;
             z-index: 20;
         }
@@ -278,11 +278,11 @@
             align-items: center;
         }
         .controls input[type="file"] {
-            display: none; /* Hide default file input */
+            display: none;
         }
-        .controls .file-label-btn { /* Style custom file input button */
+        .controls .file-label-btn {
             padding: 8px 12px;
-            background: #e67e22; /* Orange for import */
+            background: #e67e22;
             color: white;
             border: none;
             border-radius: 4px;
@@ -440,8 +440,8 @@
         let elementCounter = 0;
 
         let isConnectingMode = false;
-        let startConnectionElement = null;
-        const connections = [];
+        let startConnectionElementInfo = null; // Stores { element, anchorType }
+        const connections = []; // Stores { fromId, fromAnchorType, toId, toAnchorType, arrowSvgElement }
 
 
         const elementConfigs = {
@@ -461,7 +461,9 @@
         const canvasElement = document.getElementById('canvas');
         const connectToolButton = document.getElementById('connect-tool');
         const importFileInput = document.getElementById('import-file-input');
-        // const addPageButton = document.getElementById('add-page-button'); // Page management still placeholder
+
+        // Page related variables (placeholder for now, as multi-page logic is not integrated here)
+        // const addPageButton = document.getElementById('add-page-button');
         // const pagesListUI = document.getElementById('pages-list');
 
 
@@ -478,35 +480,95 @@
             isConnectingMode = !isConnectingMode;
             e.target.classList.toggle('active', isConnectingMode);
             canvasElement.classList.toggle('connecting-mode', isConnectingMode);
-            if (!isConnectingMode && startConnectionElement) {
-                startConnectionElement.classList.remove('connection-start');
-                startConnectionElement = null;
+            if (!isConnectingMode && startConnectionElementInfo) { // Check startConnectionElementInfo
+                startConnectionElementInfo.element.classList.remove('connection-start');
+                startConnectionElementInfo = null;
             } else if (isConnectingMode) {
                 deselectAll();
                 updatePropertiesPanel();
             }
         });
 
+        function getElementRect(element) {
+            return {
+                left: parseFloat(element.style.left),
+                top: parseFloat(element.style.top),
+                width: parseFloat(element.style.width),
+                height: parseFloat(element.style.height)
+            };
+        }
+
+        function getAnchorPointCoordinates(element, anchorType) {
+            const rect = getElementRect(element);
+            if(isNaN(rect.left) || isNaN(rect.top) || isNaN(rect.width) || isNaN(rect.height) ) return null; // Safety check
+
+            switch (anchorType) {
+                case 'top': return { x: rect.left + rect.width / 2, y: rect.top };
+                case 'bottom': return { x: rect.left + rect.width / 2, y: rect.top + rect.height };
+                case 'left': return { x: rect.left, y: rect.top + rect.height / 2 };
+                case 'right': return { x: rect.left + rect.width, y: rect.top + rect.height / 2 };
+                default: return null;
+            }
+        }
+
+        function getClosestAnchorToPoint(element, mouseX, mouseY) {
+            const anchorTypes = ['top', 'bottom', 'left', 'right'];
+            let closestAnchor = null;
+            let minDistance = Infinity;
+            const clickThreshold = 20; // Consider click valid if within 20px of an anchor point
+
+            anchorTypes.forEach(type => {
+                const point = getAnchorPointCoordinates(element, type);
+                if (point) {
+                    const distance = Math.sqrt(Math.pow(point.x - mouseX, 2) + Math.pow(point.y - mouseY, 2));
+                    if (distance < minDistance && distance < clickThreshold) {
+                        minDistance = distance;
+                        closestAnchor = { type, x: point.x, y: point.y };
+                    }
+                }
+            });
+            return closestAnchor;
+        }
+
+
         canvasElement.addEventListener('click', (e) => {
             const targetElement = e.target.closest('.wireframe-element');
+            const canvasRect = canvasElement.getBoundingClientRect(); // For converting click to canvas coords
+            const mouseX = e.clientX - canvasRect.left;
+            const mouseY = e.clientY - canvasRect.top;
+
             if (isConnectingMode) {
                 if (targetElement) {
-                    if (!startConnectionElement) {
-                        startConnectionElement = targetElement;
+                    const closestAnchor = getClosestAnchorToPoint(targetElement, mouseX, mouseY);
+                    if (!closestAnchor) {
+                        if (startConnectionElementInfo) {
+                            startConnectionElementInfo.element.classList.remove('connection-start');
+                            startConnectionElementInfo = null;
+                        }
+                        return;
+                    }
+
+                    if (!startConnectionElementInfo) {
+                        startConnectionElementInfo = { element: targetElement, anchorType: closestAnchor.type };
                         targetElement.classList.add('connection-start');
                         e.stopPropagation();
-                    } else if (startConnectionElement !== targetElement) {
-                        createConnection(startConnectionElement, targetElement);
-                        startConnectionElement.classList.remove('connection-start');
-                        startConnectionElement = null;
-                    } else {
-                         if(startConnectionElement) startConnectionElement.classList.remove('connection-start');
-                         startConnectionElement = null;
+                    } else if (startConnectionElementInfo.element !== targetElement) {
+                        createConnection(
+                            startConnectionElementInfo.element,
+                            startConnectionElementInfo.anchorType,
+                            targetElement,
+                            closestAnchor.type
+                        );
+                        startConnectionElementInfo.element.classList.remove('connection-start');
+                        startConnectionElementInfo = null;
+                    } else { // Clicked same element again
+                        startConnectionElementInfo.element.classList.remove('connection-start');
+                        startConnectionElementInfo = null;
                     }
                 } else {
-                    if (startConnectionElement) {
-                        startConnectionElement.classList.remove('connection-start');
-                        startConnectionElement = null;
+                    if (startConnectionElementInfo) {
+                        startConnectionElementInfo.element.classList.remove('connection-start');
+                        startConnectionElementInfo = null;
                     }
                 }
             } else {
@@ -514,6 +576,8 @@
                     deselectAll();
                     updatePropertiesPanel();
                 }
+                // For normal selection, mousedown on element itself (startDrag) handles it.
+                // If a click happens without initiating a drag, selectElement is called from there.
             }
         });
 
@@ -523,13 +587,11 @@
             const element = document.createElement('div');
             element.className = `wireframe-element ${type}-element`;
 
-            // Use loaded ID or generate new one
             element.id = loadedConfig ? config.id :`element-${elementCounter}`;
-            if (!loadedConfig) { // Ensure counter is always ahead of loaded IDs
+            if (!loadedConfig) {
                  const idNum = parseInt(element.id.split('-')[1]);
                  if (idNum >= elementCounter) elementCounter = idNum + 1;
             }
-
 
             const x = loadedConfig ? config.x : (Math.random() * (canvasElement.offsetWidth - (config.width || 100) - 100) + 50);
             const y = loadedConfig ? config.y : (Math.random() * (canvasElement.offsetHeight - (config.height || 50) - 100) + 50);
@@ -546,7 +608,6 @@
             if (type === 'arrow' && config.rotation) {
                  element.style.transform = `rotate(${config.rotation}deg)`;
             }
-
 
             if (type === 'arrow') {
                 element.innerHTML = `
@@ -573,7 +634,7 @@
                 element.style.borderRadius = '50%';
                 element.textContent = config.text || elementConfigs[type].text;
             } else if (type === 'image') {
-                element.dataset.caption = config.caption || config.text || ''; // Use text as fallback for caption if loading old format
+                element.dataset.caption = config.caption || config.text || '';
                 const iconSpan = document.createElement('span');
                 iconSpan.textContent = elementConfigs.image.text;
                 element.appendChild(iconSpan);
@@ -598,19 +659,19 @@
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-btn';
             deleteBtn.innerHTML = '×';
-            deleteBtn.onclick = (e) => { e.stopPropagation();
-                const elToRemove = element; // Closure for the element
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                const elToRemove = element;
                 const idToRemove = elToRemove.id;
                 elToRemove.remove();
                 if(selectedElement === elToRemove) {
                     deselectAll();
                     updatePropertiesPanel();
                 }
-                // Remove connections associated with this element
                 connections.slice().reverse().forEach((conn, index) => {
                     if (conn.fromId === idToRemove || conn.toId === idToRemove) {
                         if (conn.arrowSvgElement) conn.arrowSvgElement.remove();
-                        connections.splice(connections.length - 1 - index, 1);
+                        connections.splice(connections.indexOf(conn), 1); // Use indexOf on original array
                     }
                 });
             };
@@ -630,24 +691,24 @@
                 selectElement({ target: element, stopPropagation: () => {} }, false);
                 updatePropertiesPanel();
             }
-             // Update elementCounter if loaded ID is higher
             const idNum = parseInt(element.id.split('-')[1]);
             if (idNum >= elementCounter) {
                 elementCounter = idNum + 1;
             }
         }
 
-        function createConnection(el1, el2) {
+        function createConnection(fromElement, fromAnchorType, toElement, toAnchorType) {
             const svgNS = "http://www.w3.org/2000/svg";
             const arrowSvg = document.createElementNS(svgNS, "svg");
-            const arrowId = `connector-arrow-${connections.length + 1}`;
+            const uniqueArrowIdPart = connections.length + 1 + Date.now(); // Make it more unique
+            const arrowId = `connector-arrow-${uniqueArrowIdPart}`;
             arrowSvg.setAttribute("id", arrowId);
             arrowSvg.classList.add("connector-arrow-svg");
 
             const line = document.createElementNS(svgNS, "line");
             const defs = document.createElementNS(svgNS, "defs");
             const marker = document.createElementNS(svgNS, "marker");
-            const markerId = `arrowhead-conn-${connections.length + 1}`;
+            const markerId = `arrowhead-conn-${uniqueArrowIdPart}`;
             marker.setAttribute("id", markerId);
             marker.setAttribute("markerWidth", "10"); marker.setAttribute("markerHeight", "7");
             marker.setAttribute("refX", "8"); marker.setAttribute("refY", "3.5");
@@ -662,7 +723,9 @@
             canvasElement.appendChild(arrowSvg);
 
             const connection = {
-                fromId: el1.id, toId: el2.id, arrowSvgElement: arrowSvg, lineElement: line
+                fromId: fromElement.id, fromAnchorType: fromAnchorType,
+                toId: toElement.id, toAnchorType: toAnchorType,
+                arrowSvgElement: arrowSvg, lineElement: line
             };
             connections.push(connection);
             updateConnectionArrow(connection);
@@ -677,16 +740,18 @@
                 if (connIndex > -1) connections.splice(connIndex, 1);
                 return;
             }
-            const canvasRect = canvasElement.getBoundingClientRect();
-            const fromRect = fromEl.getBoundingClientRect();
-            const toRect = toEl.getBoundingClientRect();
-            const fromCenterX = (fromRect.left - canvasRect.left) + fromRect.width / 2;
-            const fromCenterY = (fromRect.top - canvasRect.top) + fromRect.height / 2;
-            const toCenterX = (toRect.left - canvasRect.left) + toRect.width / 2;
-            const toCenterY = (toRect.top - canvasRect.top) + toRect.height / 2;
+
+            const startCoords = getAnchorPointCoordinates(fromEl, connection.fromAnchorType);
+            const endCoords = getAnchorPointCoordinates(toEl, connection.toAnchorType);
+
+            if (!startCoords || !endCoords) return; // Element might not be fully in DOM or sized yet.
+
             const line = connection.lineElement;
-            line.setAttribute("x1", fromCenterX); line.setAttribute("y1", fromCenterY);
-            line.setAttribute("x2", toCenterX); line.setAttribute("y2", toCenterY);
+            line.setAttribute("x1", startCoords.x);
+            line.setAttribute("y1", startCoords.y);
+            line.setAttribute("x2", endCoords.x);
+            line.setAttribute("y2", endCoords.y);
+
             connection.arrowSvgElement.style.left = '0px'; connection.arrowSvgElement.style.top = '0px';
             connection.arrowSvgElement.style.width = '100%'; connection.arrowSvgElement.style.height = '100%';
         }
@@ -695,6 +760,7 @@
             connections.forEach(conn => updateConnectionArrow(conn));
         }
 
+
         function startDrag(e) {
             if (e.target.classList.contains('resize-handle') || e.target.classList.contains('delete-btn') || e.target.tagName === 'INPUT' || isConnectingMode) return;
             isDragging = true;
@@ -702,6 +768,8 @@
             if (selectedElement !== targetElement) {
                 selectElement({ target: targetElement, stopPropagation: () => {} });
             }
+            if (!selectedElement) return; // Should be selected by now
+
             const rect = selectedElement.getBoundingClientRect();
             const canvasRect = canvasElement.getBoundingClientRect();
             dragOffset.x = e.clientX - (rect.left - canvasRect.left);
@@ -758,7 +826,11 @@
         function selectElement(e, shouldUpdatePanel = true) {
             e.stopPropagation();
             const targetElement = e.target.closest('.wireframe-element');
-            if (isConnectingMode) return;
+            if (isConnectingMode) {
+                // Connection click logic is handled by canvasElement's click listener directly
+                return;
+            }
+
             deselectAll();
             if (targetElement) {
                 selectedElement = targetElement;
@@ -767,11 +839,14 @@
             if (shouldUpdatePanel) updatePropertiesPanel();
         }
 
+
         function deselectAll() {
             document.querySelectorAll('.wireframe-element.selected').forEach(el => el.classList.remove('selected'));
-            if (startConnectionElement) startConnectionElement.classList.remove('connection-start');
-            // startConnectionElement = null; // Reset only if not completing a connection. Click on canvas handles this.
+            if (startConnectionElementInfo) {
+                startConnectionElementInfo.element.classList.remove('connection-start');
+            }
             selectedElement = null;
+            // startConnectionElementInfo = null; // Resetting here might be too soon if a connection is being made
         }
 
         function editText(e) {
@@ -855,7 +930,7 @@
 
         function exportWireframe() {
             const elementsToExport = [];
-            document.querySelectorAll('#canvas .wireframe-element').forEach(el => { // Ensure we only get elements from the main canvas
+            document.querySelectorAll('#canvas .wireframe-element').forEach(el => {
                 const inputField = el.querySelector('.input-field');
                 let textContent = el.textContent;
                 const type = el.dataset.type;
@@ -874,7 +949,7 @@
                     fontSize: el.style.fontSize || '', rotation: rotation,
                 });
             });
-            const connectionsToExport = connections.map(conn => ({ fromId: conn.fromId, toId: conn.toId }));
+            const connectionsToExport = connections.map(conn => ({ fromId: conn.fromId, toId: conn.toId, fromAnchorType: conn.fromAnchorType, toAnchorType: conn.toAnchorType }));
             const exportData = { wireframeTitle: "Mi Wireframe", elements: elementsToExport, connections: connectionsToExport, timestamp: new Date().toISOString() };
             const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob); const a = document.createElement('a');
@@ -895,7 +970,7 @@
                     }
                 };
                 reader.readAsText(file);
-                event.target.value = null; // Reset file input
+                event.target.value = null;
             }
         });
 
@@ -904,16 +979,11 @@
                 alert("Formato de archivo no válido.");
                 return;
             }
-            clearCanvas(); // Clear existing content
-            elementCounter = 0; // Reset counter, IDs from file will be used
+            clearCanvas();
+            elementCounter = 0;
 
             data.elements.forEach(elData => {
                 createWireframeElement(elData.type, elData);
-                 // Ensure elementCounter is updated if loaded IDs are higher
-                const idNum = parseInt(elData.id.split('-')[1]);
-                if (idNum >= elementCounter) {
-                    elementCounter = idNum + 1;
-                }
             });
 
             if (data.connections && Array.isArray(data.connections)) {
@@ -921,14 +991,16 @@
                     const fromEl = document.getElementById(connData.fromId);
                     const toEl = document.getElementById(connData.toId);
                     if (fromEl && toEl) {
-                        createConnection(fromEl, toEl);
+                        // Ensure anchor types are valid or default if missing
+                        const fromAnchor = connData.fromAnchorType || 'right'; // Default if not specified
+                        const toAnchor = connData.toAnchorType || 'left';   // Default if not specified
+                        createConnection(fromEl, fromAnchor, toEl, toAnchor);
                     } else {
                         console.warn(`Could not create connection: element(s) not found for fromId=${connData.fromId}, toId=${connData.toId}`);
                     }
                 });
             }
-            updateAllConnections(); // Refresh all arrow positions
-            console.log("Wireframe importado.");
+            updateAllConnections();
         }
 
 
@@ -937,16 +1009,23 @@
             if (e.key === 'Delete' && selectedElement) {
                 const idToRemove = selectedElement.id;
                 selectedElement.remove(); selectedElement = null; updatePropertiesPanel();
-                // Remove connections associated with this element
                 connections.slice().reverse().forEach((conn, index) => {
                     if (conn.fromId === idToRemove || conn.toId === idToRemove) {
                         if (conn.arrowSvgElement) conn.arrowSvgElement.remove();
-                        connections.splice(connections.length - 1 - index, 1);
+                        connections.splice(connections.indexOf(conn), 1);
                     }
                 });
             }
             if (e.key === 'Escape') { deselectAll(); updatePropertiesPanel(); }
         });
+
+        // Placeholder for page management (needs full integration)
+        // const pagesListUI = document.getElementById('pages-list');
+        // const addPageButton = document.getElementById('add-page-button');
+        // function updatePagesListUI() { /* ... */ }
+        // addPageButton.addEventListener('click', () => { /* ... */ });
+        // function handleDeletePage(pageIdToDelete, pageNameToConfirm) { /* ... */ }
+        // initApp(); // Would initialize multi-page system
 
         updatePropertiesPanel();
         console.log('DOM-based Wireframing tool script loaded.');
