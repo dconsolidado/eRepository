@@ -1,223 +1,419 @@
-body, html {
-    margin: 0;
-    padding: 0;
-    font-family: sans-serif;
-    height: 100%;
-    overflow: hidden; /* Prevents scrollbars from base layout */
-}
+* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-.app-container {
-    display: flex;
-    height: 100vh; /* Full viewport height */
-}
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
 
-.sidebar {
-    width: 200px;
-    background-color: #f0f0f0;
-    padding: 15px;
-    border-right: 1px solid #ccc;
-    overflow-y: auto; /* Allow scrolling if many elements */
-    display: flex;
-    flex-direction: column;
-}
+        .container {
+            display: flex;
+            height: 100vh;
+        }
 
-.pages-panel {
-    padding-bottom: 10px;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #ddd;
-}
+        .toolbar {
+            width: 200px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+        }
 
-.pages-panel h3 {
-    margin-top: 0;
-    margin-bottom: 8px;
-    font-size: 1.1em;
-    color: #333;
-}
+        .toolbar h3 {
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #bdc3c7;
+        }
 
-#pages-list {
-    list-style-type: none;
-    padding: 0;
-    margin: 0 0 10px 0;
-    max-height: 150px; /* Example max height, can be adjusted */
-    overflow-y: auto;
-}
+        .element-group {
+            margin-bottom: 20px;
+        }
 
-#pages-list li {
-    padding: 8px 10px;
-    margin-bottom: 3px;
-    background-color: #e9e9e9;
-    border: 1px solid #d0d0d0;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 0.9em;
-}
+        .element-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #34495e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
 
-#pages-list li:hover {
-    background-color: #d5d5d5;
-}
+        .element-btn:hover {
+            background: #3498db;
+        }
 
-#pages-list li.active-page {
-    background-color: #007bff;
-    color: white;
-    border-color: #0056b3;
-    font-weight: bold;
-}
-
-#add-page-button {
-    display: block;
-    width: 100%;
-    padding: 8px;
-    background-color: #28a745; /* Green for add */
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    text-align: center;
-    font-size: 0.9em;
-}
-
-#add-page-button:hover {
-    background-color: #218838;
-}
+        .tool-btn {
+            background: #1abc9c;
+        }
+        .tool-btn:hover {
+            background: #16a085;
+        }
+        .tool-btn.active {
+            background: #16a085;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
 
 
-.sidebar .elements-section h2, /* Target h2 specifically in elements section if needed */
-.sidebar h2 { /* Existing rule for Elements, keep or merge */
-    margin-top: 0;
-    font-size: 1.2em;
-    text-align: center;
-}
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background: white;
+            overflow: hidden;
+        }
 
-#elements-list {
-    list-style-type: none;
-    padding: 0;
-}
+        .canvas {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background:
+                radial-gradient(circle, #ddd 1px, transparent 1px);
+            background-size: 20px 20px;
+            cursor: default;
+        }
+        .canvas.connecting-mode { /* For dynamic SVG connectors */
+            cursor: crosshair;
+        }
+        .canvas.connecting-mode .wireframe-element:hover {
+             cursor: pointer;
+             border-color: #1abc9c !important;
+        }
+        .canvas.linking-arrow-handle { /* For dragging static arrow handles */
+            cursor: grabbing;
+        }
 
-/* Basic styling for list items in the sidebar - will be improved later */
-#elements-list li {
-    padding: 8px;
-    margin-bottom: 5px;
-    background-color: #e0e0e0;
-    border: 1px solid #ccc;
-    cursor: grab;
-    text-align: center;
-}
 
-.canvas-area {
-    flex-grow: 1; /* Takes up remaining space */
-    display: flex; /* To center canvas if it's smaller */
-    justify-content: center;
-    align-items: center;
-    background-color: #e9e9e9; /* Light gray background for canvas area */
-    overflow: auto; /* In case canvas is larger than view */
-}
+        .wireframe-element {
+            position: absolute;
+            border: 2px solid #3498db;
+            background: rgba(52, 152, 219, 0.1); /* Default for rectangle, etc. */
+            cursor: move;
+            user-select: none;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #2c3e50; /* Default text color */
+            font-weight: bold;
+            overflow: hidden;
+        }
 
-#wireframe-canvas {
-    border: 1px solid #a0a0a0;
-    background-color: #fff; /* White canvas */
-    /* Dimensions will be set by JavaScript later, or default canvas dimensions */
-}
+        .wireframe-element:hover {
+            border-color: #e74c3c;
+            /* background: rgba(231, 76, 60, 0.1); */ /* Let fill color take precedence */
+        }
 
-.sidebar .actions {
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-}
+        .wireframe-element.selected {
+            border-color: #e74c3c !important;
+            /* background: rgba(231, 76, 60, 0.2); */ /* Let fill color take precedence */
+            z-index: 10;
+        }
+        .wireframe-element.connection-start { /* For dynamic SVG connectors */
+            box-shadow: 0 0 10px #1abc9c;
+            border-color: #1abc9c !important;
+        }
 
-.sidebar .actions button {
-    padding: 10px;
-    margin-bottom: 10px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
 
-.sidebar .actions button:hover {
-    background-color: #0056b3;
-}
+        .button-element {
+            border-radius: 6px;
+            background-color: #ecf0f1; /* Default button fill */
+            border: 2px solid #95a5a6;
+            text-align: center;
+            line-height: 1;
+        }
 
-.sidebar .tools {
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #ddd;
-}
+        .text-element {
+            border: 2px dashed #95a5a6;
+            background: transparent;
+            text-align: left;
+            padding: 5px;
+            line-height: 1.2;
+            align-items: flex-start;
+        }
 
-.sidebar .tools h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 1em;
-    color: #333;
-}
+        .paragraph-element {
+            border: 2px dashed #7f8c8d;
+            background: transparent;
+            text-align: left;
+            padding: 5px;
+            line-height: 1.2;
+            align-items: flex-start;
+            white-space: pre-wrap;
+        }
 
-.sidebar .tools button {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    background-color: #6c757d; /* A different color for tools */
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    text-align: left;
-}
 
-.sidebar .tools button:hover {
-    background-color: #5a6268;
-}
+        .input-element {
+            border: 2px solid #bdc3c7;
+            background: white;
+            border-radius: 2px;
+            padding: 0;
+            text-align: left;
+            overflow: hidden;
+            display: flex;
+        }
 
-.sidebar .tools button.active {
-    background-color: #5a6268; /* Darker when active */
-    box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
-}
+        .input-field {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            padding: 5px;
+            font-family: inherit;
+            font-size: inherit;
+            background: transparent;
+            resize: none;
+        }
 
-.properties-panel {
-    width: 250px;
-    background-color: #f8f8f8;
-    padding: 15px;
-    border-left: 1px solid #ccc;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-}
+        .image-element {
+            border: 2px solid #95a5a6;
+            background: #ecf0f1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #7f8c8d;
+            text-align: center;
+        }
+        .image-element .caption {
+            font-size: 0.7em;
+            font-weight: normal;
+            margin-top: 5px;
+            color: #2c3e50;
+        }
 
-.properties-panel h2 {
-    margin-top: 0;
-    font-size: 1.2em;
-    text-align: center;
-    border-bottom: 1px solid #ddd;
-    padding-bottom: 10px;
-    margin-bottom: 10px;
-}
 
-#properties-content p {
-    color: #666;
-    text-align: center;
-    font-style: italic;
-}
+        .arrow-element {
+            border: none;
+            background: transparent;
+            transform-origin: 0 50%;
+        }
+        .arrow-element .arrow-svg-static {
+            width: 100%;
+            height: 100%;
+            display: block;
+            overflow: visible;
+        }
+        .arrow-element .arrow-svg-static line {
+             stroke-width: 2;
+             stroke: #2c3e50;
+        }
+        .arrow-element .arrow-svg-static polygon {
+            fill: #2c3e50;
+        }
 
-/* Styles for form elements within properties panel - can be expanded */
-#properties-content label {
-    display: block;
-    margin-top: 10px;
-    font-weight: bold;
-    font-size: 0.9em;
-}
+        .connector-arrow-svg {
+            position: absolute;
+            overflow: visible;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .connector-arrow-svg line {
+            stroke: #2c3e50;
+            stroke-width: 2;
+        }
+         .connector-arrow-svg polygon {
+            fill: #2c3e50;
+        }
 
-#properties-content input[type="color"],
-#properties-content input[type="number"],
-#properties-content input[type="text"],
-#properties-content select {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
+        #linking-preview-line {
+            stroke: #007bff;
+            stroke-width: 1.5;
+            stroke-dasharray: 4, 4;
+        }
 
-#properties-content input[type="color"] {
-    height: 40px; /* Make color input a bit taller */
-}
+
+        .connection-handle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: green;
+            border: 1px solid darkgreen;
+            border-radius: 50%;
+            cursor: grab;
+            z-index: 20;
+            display: none;
+        }
+        .wireframe-element.selected.arrow-element .connection-handle {
+            display: block;
+        }
+        .arrow-element .connection-handle.start {
+            left: -5px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .arrow-element .connection-handle.end {
+            right: -5px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+
+        .delete-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 20px;
+            height: 20px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 20px;
+            text-align: center;
+            display: none;
+            z-index: 15;
+        }
+
+        .wireframe-element.selected .delete-btn {
+            display: block;
+        }
+
+        .resize-handle {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            width: 10px;
+            height: 10px;
+            background: #3498db;
+            cursor: se-resize;
+            display: none;
+            z-index: 15;
+        }
+
+        .wireframe-element.selected:not(.arrow-element) .resize-handle {
+            display: block;
+        }
+
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 20;
+        }
+         .controls .file-input-group {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .controls input[type="file"] {
+            display: none;
+        }
+        .controls .file-label-btn {
+            padding: 8px 12px;
+            background: #e67e22;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .controls .file-label-btn:hover {
+            background: #d35400;
+        }
+
+
+        .control-btn {
+            padding: 8px 12px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+         .control-btn:disabled { /* Style for disabled undo/redo */
+            background: #a5b1c2;
+            cursor: not-allowed;
+        }
+
+        .control-btn:hover:not(:disabled) {
+            background: #2980b9;
+        }
+
+        .properties-sidebar {
+            width: 220px;
+            background: #ecf0f1;
+            padding: 15px;
+            border-left: 1px solid #bdc3c7;
+            overflow-y: auto;
+            color: #2c3e50;
+        }
+        .properties-sidebar h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #7f8c8d;
+            border-bottom: 1px solid #bdc3c7;
+            padding-bottom: 10px;
+        }
+        .prop-group {
+            margin-bottom:15px;
+        }
+        .prop-group label {
+            display: block;
+            font-size: 11px;
+            margin-bottom: 3px;
+            font-weight: bold;
+        }
+        .prop-group input[type="number"],
+        .prop-group input[type="text"],
+        .prop-group input[type="color"],
+        .prop-group select,
+        .prop-group button {
+            width: 100%;
+            padding: 6px;
+            border-radius: 3px;
+            border: 1px solid #bdc3c7;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+         .prop-group input[type="color"] {
+            height: 30px;
+            padding: 3px;
+        }
+        .prop-group button {
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+        }
+         .prop-group button:hover {
+            background-color: #2980b9;
+        }
+        .alignment-buttons button {
+            width: auto;
+            padding: 5px 8px;
+            margin-right: 5px;
+        }
+        .page-action-button {
+             font-size: 0.8em !important;
+             padding: 2px 5px !important;
+             margin-left: 5px !important;
+             background-color: #7f8c8d !important;
+        }
+        .page-action-button:hover {
+            background-color: #95a5a6 !important;
+        }
+        .page-delete-button {
+            background-color: #c0392b !important;
+        }
+        .page-delete-button:hover {
+            background-color: #e74c3c !important;
+        }
