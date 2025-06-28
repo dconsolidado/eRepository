@@ -87,8 +87,28 @@ function updateUndoRedoButtonsState() { /* ... existing ... */ }
 
 // --- Initialization & DOM References ---
 function initAppDOMReferences() { /* ... existing ... */ }
-function initApp() { /* ... existing ... */ }
-Object.assign(elementConfigs, { /* ... existing ... */ });
+function initApp() {
+    initAppDOMReferences();
+    updatePropertiesPanel();
+    setTimeout(() => {
+        captureState();
+        updateUndoRedoButtonsState();
+    }, 0);
+}
+
+Object.assign(elementConfigs, {
+    button: { width: 100, height: 35, text: 'Botón', defaultFillColor: '#ecf0f1', defaultTextColor: '#2c3e50' },
+    // input: { width: 150, height: 30, text: '', placeholder: 'Escribe aquí...', defaultTextColor: '#2c3e50' }, // Removed
+    // text: { width: 120, height: 25, text: 'Texto aquí', defaultTextColor: '#2c3e50' }, // Removed
+    // image: { width: 120, height: 80, text: '🖼️', caption: '', defaultTextColor: '#2c3e50' }, // Removed
+    rectangle: { width: 100, height: 60, text: '', defaultFillColor: 'rgba(52, 152, 219, 0.1)' },
+    circle: { width: 80, height: 80, text: '' , defaultFillColor: 'rgba(52, 152, 219, 0.1)'},
+    arrow: { width: 100, height: 20, text: '' }, // Represents the logical DIV for a static arrow
+    menu: { width: 150, height: 100, text: '☰ Menú\n• Opción 1\n• Opción 2', defaultTextColor: '#2c3e50', defaultFillColor: '#ffffff' },
+    tab: { width: 200, height: 30, text: 'Tab 1 | Tab 2 | Tab 3', defaultTextColor: '#2c3e50', defaultFillColor: '#ecf0f1' },
+    breadcrumb: { width: 200, height: 25, text: 'Inicio > Página', defaultTextColor: '#2c3e50', defaultFillColor: 'transparent' },
+    paragraph: { width: 150, height: 60, text: 'Párrafo de texto.', defaultTextColor: '#2c3e50', defaultFillColor: 'transparent'}
+});
 
 // --- Geometric Helpers & Anchor Logic ---
 function getElementRect(element) { /* ... existing ... */ }
@@ -329,30 +349,34 @@ function createWireframeElement(type, loadedConfig = null) {
         element.style.height = '10px';
         element.innerHTML = '';
         updateStaticArrowSVGRepresentation(element);
-    } else if (type === 'input') {
-        const inputField = document.createElement('input'); inputField.className = 'input-field'; inputField.type = 'text';
-        inputField.placeholder = config.placeholder || baseConfig.placeholder || '';
-        inputField.value = textContent;
-        if(element.style.color) inputField.style.color = element.style.color;
-        inputField.addEventListener('mousedown', (e_input) => e_input.stopPropagation());
-        inputField.addEventListener('click', (e_input) => e_input.stopPropagation());
-        inputField.addEventListener('input', () => { captureState(); updatePropertiesPanel(); captureState(); });
-        element.appendChild(inputField);
+    // Removed 'input' type specific logic
+    // } else if (type === 'input') {
+    //     const inputField = document.createElement('input'); inputField.className = 'input-field'; inputField.type = 'text';
+    //     inputField.placeholder = config.placeholder || baseConfig.placeholder || '';
+    //     inputField.value = textContent;
+    //     if(element.style.color) inputField.style.color = element.style.color;
+    //     inputField.addEventListener('mousedown', (e_input) => e_input.stopPropagation());
+    //     inputField.addEventListener('click', (e_input) => e_input.stopPropagation());
+    //     inputField.addEventListener('input', () => { captureState(); updatePropertiesPanel(); captureState(); });
+    //     element.appendChild(inputField);
     } else if (type === 'circle') { element.style.borderRadius = '50%'; element.textContent = textContent; }
-    else if (type === 'image') {
-        element.dataset.caption = config.caption || textContent || baseConfig.caption || '';
-        const iconSpan = document.createElement('span');
-        iconSpan.textContent = baseConfig.text || '🖼️';
-        element.appendChild(iconSpan);
-        if (element.dataset.caption) {
-            const captionSpan = document.createElement('span'); captionSpan.className = 'caption';
-            captionSpan.textContent = element.dataset.caption;
-            if(element.style.color) captionSpan.style.color = element.style.color;
-            element.appendChild(captionSpan);
-        }
-    } else {
+    // Removed 'image' type specific logic
+    // else if (type === 'image') {
+    //     element.dataset.caption = config.caption || textContent || baseConfig.caption || '';
+    //     const iconSpan = document.createElement('span');
+    //     iconSpan.textContent = baseConfig.text || '🖼️';
+    //     element.appendChild(iconSpan);
+    //     if (element.dataset.caption) {
+    //         const captionSpan = document.createElement('span'); captionSpan.className = 'caption';
+    //         captionSpan.textContent = element.dataset.caption;
+    //         if(element.style.color) captionSpan.style.color = element.style.color;
+    //         element.appendChild(captionSpan);
+    //     }
+    // Removed 'text' type specific logic (now covered by 'else' or needs specific handling if paragraph is different)
+    // }
+    else { // Handles 'button', 'rectangle', 'menu', 'tab', 'breadcrumb', 'paragraph', and implicitly 'text' if it was generic
         element.textContent = textContent;
-        if (type === 'menu' || type === 'breadcrumb' || type === 'paragraph' || (type === 'text' && element.textContent.includes('\n'))) {
+        if (type === 'menu' || type === 'breadcrumb' || type === 'paragraph' || (type === 'text' && element.textContent.includes('\n'))) { // 'text' condition might be dead if text type is fully removed
             element.style.whiteSpace = 'pre-line';
         }
         if (type === 'menu') { element.style.fontSize = '11px'; element.style.padding = '8px';}
@@ -523,28 +547,25 @@ function updatePropertiesPanel() {
     }
 
     // Text Content / Value / Caption
-    if (type === 'button' || type === 'text' || type === 'paragraph' || type === 'menu' || type === 'tab' || type === 'breadcrumb') {
+    // Adjusted to only include 'button' and other remaining text-based types.
+    // 'text' type is effectively gone from UI, 'paragraph', 'menu', 'tab', 'breadcrumb' remain.
+    if (type === 'button' || type === 'paragraph' || type === 'menu' || type === 'tab' || type === 'breadcrumb') {
         content += `<div class="prop-group">
                         <label for="prop-text">Texto:</label>
                         <input type="text" id="prop-text" value="${selectedElement.textContent.trim()}">
                     </div>`;
     }
-    if (type === 'input') {
-        const inputField = selectedElement.querySelector('.input-field');
-        content += `<div class="prop-group">
-                        <label for="prop-input-value">Valor:</label>
-                        <input type="text" id="prop-input-value" value="${inputField ? inputField.value : ''}">
-                    </div>`;
-    }
-     if (type === 'image') {
-        content += `<div class="prop-group">
-                        <label for="prop-caption">Pie de foto:</label>
-                        <input type="text" id="prop-caption" value="${selectedElement.dataset.caption || ''}">
-                    </div>`;
-    }
+    // Removed 'input' type specific property panel section
+    // if (type === 'input') { ... }
+
+    // Removed 'image' type specific property panel section for caption input
+    // if (type === 'image') { ... }
+
 
     // Text Styling (for elements that typically have text)
-    if (type !== 'arrow' && type !== 'rectangle' && type !== 'circle' && type !== 'image') {
+    // Adjusted to exclude 'image' and ensure it covers remaining text types.
+    // 'text' type is gone, 'input' is gone. 'button', 'paragraph', 'menu', 'tab', 'breadcrumb' are main text ones.
+    if (type === 'button' || type === 'paragraph' || type === 'menu' || type === 'tab' || type === 'breadcrumb') {
         content += `<h4>Estilo de Texto</h4>`;
         content += `<div class="prop-group alignment-buttons">
                         <label>Alineación:</label>
