@@ -4,12 +4,12 @@ let isResizing = false;
 let dragOffset = { x: 0, y: 0 };
 let elementCounter = 0;
 
-let isConnectingMode = false;
-let startConnectionElementInfo = null;
-const connections = [];
-
 // New state variable for dragging arrow handles
 let currentDraggingArrowHandle = null; // { arrowDiv, handleType, originalMouseX, originalMouseY }
+// Variables for 'Conectar Elementos' tool (now removed, keep for potential future use or delete)
+// let isConnectingMode = false;
+// let startConnectionElementInfo = null;
+// const connections = []; // Stores dynamic SVG connectors
 
 let linkingPreviewLine = document.getElementById('linking-preview-line');
 
@@ -27,7 +27,7 @@ let redoButton = document.getElementById('redo-button');
 
 // --- Capture/Restore State & Undo/Redo ---
 function captureState() {
-    const state = { elements: [], connections: [] };
+    const state = { elements: [] /*, connections: [] */ }; // Removed 'connections' for dynamic connectors
     document.querySelectorAll('.wireframe-element').forEach(el => {
         const elState = {
             id: el.id, type: el.dataset.type,
