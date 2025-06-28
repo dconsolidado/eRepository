@@ -301,9 +301,61 @@
             z-index: 15;
         }
 
-        .wireframe-element.selected:not(.arrow-element) .resize-handle {
+        .wireframe-element.selected:not(.arrow-element) .resize-handle { /* Old single resize handle, may be removed later */
             display: block;
         }
+
+        /* Enhanced Selection UI */
+        .selection-box {
+            position: absolute;
+            border: 1px dashed #007bff; /* Dashed blue line for the selection box */
+            pointer-events: none; /* The box itself shouldn't capture mouse events */
+            z-index: 20; /* Ensure it's above the element but below handles */
+        }
+
+        .resize-handle-visual { /* Visual part of the handle, if nested for easier styling */
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            border: 1px solid #007bff;
+            box-sizing: border-box;
+        }
+
+        .resize-handle-anchor { /* Main container for each handle, positioned absolutely */
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: white; /* Handles are white squares */
+            border: 1px solid #007bff; /* Blue border */
+            z-index: 25; /* Above selection-box */
+            /* transform: translate(-50%, -50%); /* Center the handle on its coordinates */
+        }
+
+        .resize-handle-anchor.handle-nw { cursor: nwse-resize; }
+        .resize-handle-anchor.handle-n  { cursor: ns-resize; }
+        .resize-handle-anchor.handle-ne { cursor: nesw-resize; }
+        .resize-handle-anchor.handle-e  { cursor: ew-resize; }
+        .resize-handle-anchor.handle-se { cursor: nwse-resize; }
+        .resize-handle-anchor.handle-s  { cursor: ns-resize; }
+        .resize-handle-anchor.handle-sw { cursor: nesw-resize; }
+        .resize-handle-anchor.handle-w  { cursor: ew-resize; }
+
+        .rotation-handle-anchor {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: white;
+            border: 1px solid #007bff;
+            border-radius: 50%; /* Circular handle */
+            cursor: grab; /* Or a specific rotation cursor if available/desired */
+            z-index: 25;
+            /* transform: translate(-50%, -50%); */
+            /* Positioned by JS, e.g., above the top-middle handle */
+        }
+        .rotation-handle-anchor:hover {
+            background-color: #e6f2ff;
+        }
+
 
 
         .controls {
