@@ -118,11 +118,10 @@
             /* background: rgba(231, 76, 60, 0.2); */ /* Let fill color take precedence */
             z-index: 10;
         }
-        .wireframe-element.connection-start { /* For dynamic SVG connectors */
-            box-shadow: 0 0 10px #1abc9c;
-            border-color: #1abc9c !important;
+        .wireframe-element.connection-start { /* REMOVED - Was for dynamic SVG connectors */
+            /* box-shadow: 0 0 10px #1abc9c; */
+            /* border-color: #1abc9c !important; */
         }
-
 
         .button-element {
             border-radius: 6px;
