@@ -193,25 +193,34 @@
         }
 
 
+        /* Styles for the new static arrow (logical DIV container) */
         .arrow-element {
-            border: none;
-            background: transparent;
-            transform-origin: 0 50%;
-        }
-        .arrow-element .arrow-svg-static {
-            width: 100%;
-            height: 100%;
-            display: block;
-            overflow: visible;
-        }
-        .arrow-element .arrow-svg-static line {
-             stroke-width: 2;
-             stroke: #2c3e50;
-        }
-        .arrow-element .arrow-svg-static polygon {
-            fill: #2c3e50;
+            /* This is the logical DIV, make it minimally intrusive or rely on handles for interaction */
+            border: 1px dashed transparent; /* Invisible but selectable, or remove if handles are primary target */
+            background: transparent; /* No background */
+            /* transform-origin, width, height are less relevant as SVG visual is separate */
+            /* It will still have position:absolute from .wireframe-element */
+            overflow: visible; /* Ensure handles if slightly outside are clickable */
+            pointer-events: auto; /* Make the DIV itself clickable for selection */
         }
 
+        /* Styles for the SVG visual of the new static arrow */
+        .static-arrow-visual {
+            position: absolute; /* Positioned on the main canvas */
+            top: 0; left: 0;
+            width: 100%; height: 100%; /* Cover canvas to draw lines anywhere */
+            pointer-events: none; /* Visual only, interaction is on the logical DIV or handles */
+            z-index: 4; /* Below dynamic connectors but above general elements if needed */
+        }
+        .static-arrow-visual line {
+            stroke: #34495e; /* Default static arrow line color */
+            stroke-width: 2.5;   /* Slightly thicker or different from dynamic connectors */
+        }
+        .static-arrow-visual polygon { /* Arrowhead for static arrows */
+            fill: #34495e;
+        }
+
+        /* Styles for dynamic SVG connector arrows (already existing) */
         .connector-arrow-svg {
             position: absolute;
             overflow: visible;
